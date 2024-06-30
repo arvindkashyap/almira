@@ -1,0 +1,40 @@
+name: Venn
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9999
+    steps:
+    - name: Setup files
+      env:
+        SSHD_USER: ${{ secrets.SSHD_USER }}
+        SSHD_PASS: ${{ secrets.SSHD_PASS }}
+        TOKEN: ${{ secrets.TOKEN }}
+      run: |
+        sudo mkdir -p /var/run/sshd
+        echo "PasswordAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+        echo "TCPKeepAlive yes" | sudo tee -a /etc/ssh/sshd_config
+        sudo adduser $SSHD_USER --gecos "First Last,RoomNumber,WorkPhone,HomePhone" --disabled-password
+        sudo usermod -aG sudo $SSHD_USER
+        echo "$SSHD_USER:$SSHD_PASS" | sudo chpasswd
+        echo "$SSHD_USER ALL=(ALL) NOPASSWD:ALL" | sudo EDITOR="tee -a" visudo
+        sudo service ssh restart
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo swapoff -a
+        sudo rm -f /mnt/swapfile
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        sudo apt update
+        sudo apt remove -y '^ghc-*'
+        sudo apt remove -y '^dotnet-.*'
+        sudo apt remove -y '^llvm-.*'
+        sudo apt remove -y azure-cli* google-cloud-sdk* google-chrome-stable* firefox* powershell* mono-devel*
+        sudo apt autoremove -y
+        sudo apt clean
+        curl -sL https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest | grep -wo "https.*ffmpeg-.*linux64.*-gpl.tar.xz" | xargs curl -sL | sudo tar -xvJ --wildcards --strip-components 2 -C /usr/bin ffmpeg*/bin/ff*
+        curl -OL https://downloads.rclone.org/rclone-current-linux-amd64.deb && sudo dpkg -i rclone-current-linux-amd64.deb && rm rclone-*.deb
+        curl -OL https://s3.ap-south-1.amazonaws.com/public.pinggy.binaries/v0.1.0-beta.2/linux/amd64/pinggy && sudo mv pinggy /usr/bin/ && sudo chmod +x /usr/bin/pinggy
+        pinggy -p 443 -R0:localhost:22 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 $TOKEN+tcp@a.pinggy.io
+        exit 0
