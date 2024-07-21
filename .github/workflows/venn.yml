@@ -35,6 +35,6 @@ jobs:
         sudo apt clean
         curl -sL https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/latest | grep -wo "https.*ffmpeg-.*linux64.*-gpl.tar.xz" | xargs curl -sL | sudo tar -xvJ --wildcards --strip-components 2 -C /usr/bin ffmpeg*/bin/ff*
         curl -OL https://downloads.rclone.org/rclone-current-linux-amd64.deb && sudo dpkg -i rclone-current-linux-amd64.deb && rm rclone-*.deb
-        curl -OL https://s3.ap-south-1.amazonaws.com/public.pinggy.binaries/v0.1.0-beta.2/linux/amd64/pinggy && sudo mv pinggy /usr/bin/ && sudo chmod +x /usr/bin/pinggy
-        pinggy -p 443 -R0:localhost:22 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 $TOKEN+tcp@a.pinggy.io || exit 0
+        curl -sL https://api.github.com/repos/cloudflare/cloudflared/releases/latest | grep -m1 -Eoh "https.*cloudflared-linux-amd64" | xargs curl -sL > cloudflared && chmod +x cloudflared && sudo mv cloudflared /usr/bin/cloudflared
+        cloudflared tunnel --url ssh://localhost:22 || exit 0
         
